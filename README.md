@@ -46,7 +46,7 @@ A valid Gemini API Key.
 2. Environment Setup
 Bash
 # Clone the repository
-git clone https://github.com/your-username/bengal-rawr.git
+git clone (https://github.com/riteshb01/Bengal-RAWR.git)
 cd bengal-rawr
 
 # Create the Conda environment
