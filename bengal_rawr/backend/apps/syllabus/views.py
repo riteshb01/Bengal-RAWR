@@ -4,6 +4,7 @@ All REST API endpoints for the Bengal RAWR system.
 """
 
 import logging
+import os
 from datetime import datetime, date, timedelta
 
 from django.utils import timezone
@@ -211,7 +212,6 @@ class UploadSyllabusView(APIView):
 
         # Validate extension
         allowed = ['.pdf', '.txt', '.docx']
-        import os
         ext = os.path.splitext(file.name)[1].lower()
         if ext not in allowed:
             return Response(
@@ -533,7 +533,8 @@ class WeeklyWorkloadView(APIView):
             for wk, data in sorted(weekly.items())
         }
 
-        threshold = 7
+        from django.conf import settings
+        threshold = getattr(settings, 'CONFLICT_WEIGHT_THRESHOLD', 7)
         return Response({
             'weekly_workload': result,
             'threshold': threshold,

@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "A data-driven dashboard for visualizing academic workload insights from syllabus data.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -7,18 +7,27 @@ from apps.syllabus.views import (
     DashboardSummaryView, HeatmapDataView, WeeklyWorkloadView,
     SemanticSearchView,
 )
+
+app_name = 'syllabus'
+
 urlpatterns = [
-    path('courses/', CourseListCreateView.as_view()),
-    path('courses/<int:pk>/', CourseDetailView.as_view()),
-    path('upload-syllabus/', UploadSyllabusView.as_view()),
-    path('syllabi/<int:pk>/reprocess/', ReprocessSyllabusView.as_view()),
-    path('events/', EventListView.as_view()),
-    path('events/<int:pk>/', EventDetailView.as_view()),
-    path('events/<int:pk>/verify/', VerifyEventView.as_view()),
-    path('conflicts/', ConflictListView.as_view()),
-    path('conflicts/analyze/', RunConflictAnalysisView.as_view()),
-    path('dashboard/', DashboardSummaryView.as_view()),
-    path('dashboard/heatmap/', HeatmapDataView.as_view()),
-    path('dashboard/weekly-workload/', WeeklyWorkloadView.as_view()),
-    path('search/', SemanticSearchView.as_view()),
+    # Courses
+    path('courses/',                        CourseListCreateView.as_view(),  name='course-list'),
+    path('courses/<int:pk>/',               CourseDetailView.as_view(),      name='course-detail'),
+    # Syllabus upload & reprocessing
+    path('upload-syllabus/',                UploadSyllabusView.as_view(),    name='upload-syllabus'),
+    path('syllabi/<int:pk>/reprocess/',     ReprocessSyllabusView.as_view(), name='reprocess-syllabus'),
+    # Events
+    path('events/',                         EventListView.as_view(),         name='event-list'),
+    path('events/<int:pk>/',                EventDetailView.as_view(),       name='event-detail'),
+    path('events/<int:pk>/verify/',         VerifyEventView.as_view(),       name='event-verify'),
+    # Conflicts
+    path('conflicts/',                      ConflictListView.as_view(),      name='conflict-list'),
+    path('conflicts/analyze/',              RunConflictAnalysisView.as_view(), name='conflict-analyze'),
+    # Dashboard
+    path('dashboard/',                      DashboardSummaryView.as_view(),  name='dashboard-summary'),
+    path('dashboard/heatmap/',              HeatmapDataView.as_view(),       name='dashboard-heatmap'),
+    path('dashboard/weekly-workload/',      WeeklyWorkloadView.as_view(),    name='dashboard-weekly-workload'),
+    # Semantic search
+    path('search/',                         SemanticSearchView.as_view(),    name='semantic-search'),
 ]

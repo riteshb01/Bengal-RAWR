@@ -1,59 +1,77 @@
 # 🐯 Bengal RAWR
-### Academic Conflict Detection System
-> Upload course syllabi → extract events → detect impossible weeks → visualize workload
+### Academic Conflict & Workload Intelligence System
+
+> Automated academic workload analysis pipeline that extracts assessment schedules from course syllabi, detects calendar/workload bottlenecks across concurrent courses, and surfaces timeline insights via an interactive dashboard.
 
 ---
 
-## Architecture Overview
+## 🏗️ System Architecture
 
 ```
-User Uploads Syllabi (PDF/TXT/DOCX)
-        ↓
-  Django Upload API  (POST /api/v1/upload-syllabus/)
-        ↓
-  Document Parser    (pdfplumber / pytesseract / python-docx)
-        ↓
-  NLP Event Engine   (spaCy + regex + dateparser)
-        ↓
-  ML Classifier      (scikit-learn Logistic Regression — Phase 2)
-        ↓
-  Event Structuring  (JSON events with workload weights)
-        ↓
-  Conflict Detection (Weekly threshold analysis)
-        ↓
-  Django Database    (SQLite → PostgreSQL in production)
-        ↓
-  React Dashboard    (Heatmap + Charts + Conflict Alerts)
+[ Client: Vite / React Dashboard (bengal-rawr-dashboard) ]
+                        │  (REST / JSON)
+                        ▼
+[ API Gateway & Application: Django REST Framework (DRF) ]
+   ├── Document Ingestion Engine (pdfplumber, python-docx, pytesseract fallback)
+   ├── Information Extraction Pipeline
+   │    ├── Heuristic Parser (Regex date extractor + keyword taxonomy)
+   │    └── ML Classifier Fallback (scikit-learn Logistic Regression, confidence-gated)
+   ├── Vector Embedding & Retrieval Layer (sentence-transformers / all-MiniLM-L6-v2)
+   └── Conflict & Workload Engine (Rolling weekly/daily load accumulator, collision detector)
+                        │
+                        ▼
+[ Persistence Layer: PostgreSQL (pgvector) / SQLite ]
+   ├── Relational: Courses, SyllabusFiles, Events, ConflictWeeks
+   └── Vector Store: Document chunk embeddings (384-dim, cosine distance)
 ```
 
 ---
 
-## Quick Start
+## 🎯 Project Scopes
+
+### In-Scope
+- **Document Processing:** Ingestion and OCR parsing of `.pdf`, `.docx`, and `.txt` files up to 10 MB.
+- **Extraction & Classification:** Hybrid rule-based + ML classification for academic events and deadlines.
+- **Vector Search (RAG):** Semantic document chunk retrieval via cosine similarity (`pgvector` / dense embeddings).
+- **Conflict Analysis:** Per-course and cross-course collision tracking with severity classification.
+- **API & UI:** DRF CRUD endpoints, conflict calculation APIs, and a Vite/React analytics dashboard.
+
+### Out-of-Scope (Roadmap / Future Work)
+- Direct LMS sync (Canvas / Blackboard / Moodle API integrations).
+- Calendar export integrations (two-way Google Calendar / iCal sync).
+- Multi-tenant enterprise role-based access control (RBAC).
+- Distributed async task queue execution (Celery / Redis workers for background batch PDF parsing).
+
+---
+
+## 🚀 Quick Start
+
+### 1. Backend Setup (Django)
 
 ```bash
-# 1. Clone & setup
-git clone <repo>
 cd bengal_rawr
-bash scripts/setup.sh
-
-# 2. Start Django backend
+python3 -m venv venv
 source venv/bin/activate
-cd backend
-python manage.py runserver
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
 
-# 3. Start React frontend (separate terminal)
-cd frontend
-npm start
-
-# 4. (Optional) Seed test data
 cd backend
-python manage.py seed_test_data
+python manage.py migrate
+python manage.py runserver 8000
+```
+
+### 2. Frontend Setup (React / Vite)
+
+```bash
+cd bengal-rawr-dashboard
+npm install
+npm run dev
 ```
 
 Open:
-- **Frontend**: http://localhost:3000
-- **Django Admin**: http://localhost:8000/admin (admin / admin)
-- **API**: http://localhost:8000/api/v1/
+- **Dashboard UI**: http://localhost:3000
+- **Django Admin**: http://localhost:8000/admin
+- **API Root**: http://localhost:8000/api/v1/
 
 ---
 

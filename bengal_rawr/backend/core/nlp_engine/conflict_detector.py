@@ -41,12 +41,7 @@ def get_week_end(d: date) -> date:
     """Return Sunday of the week containing date d."""
     return get_week_start(d) + timedelta(days=6)
 
-
 class ConflictDetectionEngine:
-    """
-    Analyzes a list of structured event dicts and identifies
-    conflict periods (overloaded weeks/days).
-    """
 
     def __init__(
         self,
@@ -78,7 +73,7 @@ class ConflictDetectionEngine:
         if not dated_events:
             return self._empty_result()
 
-        # ── Aggregate by week ──────────────────────────────────────────────
+        
         weekly_data = defaultdict(lambda: {
             'load': 0,
             'events': [],
@@ -112,10 +107,8 @@ class ConflictDetectionEngine:
             wk['week_start'] = str(wk['week_start']) if wk['week_start'] else None
             wk['week_end'] = str(wk['week_end']) if wk['week_end'] else None
 
-        # ── Conflict detection ─────────────────────────────────────────────
         conflicts = []
 
-        # Weekly conflicts
         for week_key, data in sorted(weekly_data.items()):
             load = data['load']
             if load >= self.weekly_threshold:
@@ -183,7 +176,7 @@ class ConflictDetectionEngine:
             else:
                 heavy_streak = []
 
-        # ── Summary stats ──────────────────────────────────────────────────
+
         all_loads = [d['load'] for d in weekly_data.values()]
         summary = {
             'total_events': len(dated_events),
@@ -226,12 +219,7 @@ class ConflictDetectionEngine:
         }
 
     def generate_heatmap_data(self, events: list) -> dict:
-        """
-        Generate daily workload data for heatmap visualization.
-        Returns {date_str: total_weight} for all dated events.
-
-        Compatible with GitHub-contribution-style heatmap format.
-        """
+ 
         daily_load = defaultdict(int)
         for event in events:
             if event.get('date'):

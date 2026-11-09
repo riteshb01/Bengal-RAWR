@@ -2,6 +2,8 @@
 Bengal RAWR — DRF Serializers
 """
 
+import os
+
 from rest_framework import serializers
 from apps.syllabus.models import Course, SyllabusFile, Event, ConflictWeek, AnalysisSession
 
@@ -19,8 +21,11 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.events.filter(date__isnull=False).count()
 
     def get_conflict_count(self, obj):
-        # Count weeks with events from this course that are flagged as conflicts
-        return 0  # Placeholder - computed separately
+        from apps.syllabus.models import ConflictWeek
+        course_code = obj.code or obj.name
+        return ConflictWeek.objects.filter(
+            courses_affected__contains=course_code
+        ).count()
 
 
 class SyllabusUploadSerializer(serializers.ModelSerializer):
@@ -43,7 +48,6 @@ class SyllabusUploadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("File size must not exceed 10MB.")
 
         allowed_extensions = ['.pdf', '.txt', '.docx']
-        import os
         ext = os.path.splitext(value.name)[1].lower()
         if ext not in allowed_extensions:
             raise serializers.ValidationError(

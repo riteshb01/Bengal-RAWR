@@ -1,6 +1,7 @@
 """
-Bengal RAWR - Django Settings
-Production-ready configuration for syllabus conflict detection system
+Bengal RAWR — Django Settings
+Reads all secrets and toggles from environment variables.
+Copy .env.example → .env and fill in values before running.
 """
 
 import os
@@ -8,13 +9,15 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'bengal-rawr-dev-secret-key-change-in-production')
+# ── Security ──────────────────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'changeme-use-env-var-in-production')
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False').strip().lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+_raw_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
-# Application definition
+# ── Installed apps ────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -22,11 +25,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Third party
+    # Third-party
     'rest_framework',
     'corsheaders',
-    # 'pgvector.django',  # Requires PostgreSQL — enable when deploying with PG
-    # Local apps
+    # Local
     'apps.syllabus',
 ]
 
@@ -61,9 +63,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# Database
-# Use PostgreSQL in production, SQLite for local development
-if os.environ.get('DATABASE_URL') or os.environ.get('DB_ENGINE') == 'postgresql':
+# ── Database ──────────────────────────────────────────────────────────────────
+# Set DB_ENGINE=postgresql + DB_* vars to switch to PostgreSQL.
+if os.environ.get('DB_ENGINE', '').lower() == 'postgresql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -82,7 +84,7 @@ else:
         }
     }
 
-# Password validation
+# ── Password validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -90,11 +92,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ── Internationalisation ──────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ── Static / Media files ──────────────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
@@ -102,7 +106,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST Framework configuration
+# ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -123,25 +127,27 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
 }
 
-# CORS settings
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# In development (DEBUG=True) all origins are allowed.
+# In production set CORS_ALLOWED_ORIGINS_EXTRA to a comma-separated list.
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+_extra_cors = os.environ.get('CORS_ALLOWED_ORIGINS_EXTRA', '')
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    'http://localhost:3001',
     'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-]
+] + [o.strip() for o in _extra_cors.split(',') if o.strip()]
 
-# File upload settings
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+# ── File upload ───────────────────────────────────────────────────────────────
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024          # 10 MB
 ALLOWED_UPLOAD_EXTENSIONS = ['.pdf', '.txt', '.docx']
 
-# NLP / Event parser settings
-CONFLICT_WEIGHT_THRESHOLD = 7  # Workload threshold per week
-
-# Embedding model settings (for pgvector semantic search)
-EMBEDDING_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
-EMBEDDING_DIMENSIONS = 384  # Output dimensions for all-MiniLM-L6-v2
+# ── NLP / ML settings ────────────────────────────────────────────────────────
+CONFLICT_WEIGHT_THRESHOLD = 7
+EMBEDDING_MODEL_NAME = os.environ.get(
+    'EMBEDDING_MODEL_NAME', 'sentence-transformers/all-MiniLM-L6-v2'
+)
+EMBEDDING_DIMENSIONS = 384
 
 WORKLOAD_WEIGHTS = {
     'homework': 1,
@@ -154,7 +160,10 @@ WORKLOAD_WEIGHTS = {
     'final': 8,
 }
 
-# Logging configuration
+# ── Logging ───────────────────────────────────────────────────────────────────
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -163,23 +172,27 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs/bengal_rawr.log',
-            'formatter': 'verbose',
-        },
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose' if DEBUG else 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'bengal_rawr.log',
+            'maxBytes': 10 * 1024 * 1024,   # 10 MB
+            'backupCount': 5,
             'formatter': 'verbose',
         },
     },
     'root': {
         'handlers': ['console', 'file'],
-        'level': 'INFO',
+        'level': 'DEBUG' if DEBUG else 'INFO',
     },
     'loggers': {
         'django': {
@@ -189,7 +202,12 @@ LOGGING = {
         },
         'apps': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },

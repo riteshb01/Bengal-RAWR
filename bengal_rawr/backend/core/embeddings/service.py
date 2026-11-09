@@ -13,26 +13,14 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────
-# Text chunking
-# ─────────────────────────────────────────────
+
 
 DEFAULT_CHUNK_SIZE = 300   # words per chunk
 DEFAULT_CHUNK_OVERLAP = 50  # word overlap between consecutive chunks
 
 
 def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_CHUNK_OVERLAP) -> list[str]:
-    """
-    Split text into overlapping word-based chunks.
-
-    Args:
-        text: Full document text
-        chunk_size: Target words per chunk
-        overlap: Words of overlap between consecutive chunks
-
-    Returns:
-        List of text chunks
-    """
+    
     words = text.split()
     if not words:
         return []
@@ -48,16 +36,7 @@ def chunk_text(text: str, chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = D
 
     return chunks
 
-
-# ─────────────────────────────────────────────
-# Embedding service singleton
-# ─────────────────────────────────────────────
-
 class EmbeddingService:
-    """
-    Lazy-loaded embedding service using sentence-transformers.
-    The model (~80MB) is downloaded on first use and cached locally.
-    """
 
     def __init__(self):
         self._model = None
@@ -91,29 +70,12 @@ class EmbeddingService:
         return embedding.tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """
-        Generate embeddings for a batch of texts (more efficient).
-
-        Args:
-            texts: List of input strings
-
-        Returns:
-            List of embedding vectors
-        """
+    
         self._load_model()
         embeddings = self._model.encode(texts, normalize_embeddings=True, batch_size=32)
         return [e.tolist() for e in embeddings]
 
     def chunk_and_embed(self, full_text: str) -> list[dict]:
-        """
-        Split text into chunks, then generate embeddings for each.
-
-        Args:
-            full_text: Full document text
-
-        Returns:
-            List of dicts: [{'text': str, 'embedding': list[float]}, ...]
-        """
         chunks = chunk_text(full_text)
         if not chunks:
             return []
@@ -127,9 +89,7 @@ class EmbeddingService:
     def search(self, query: str, course_id: Optional[int] = None, limit: int = 5) -> list[dict]:
         """
         Perform semantic search across stored syllabus embeddings.
-
         Uses pgvector's cosine distance operator for efficient similarity search.
-
         Args:
             query: Natural language search query
             course_id: Optional — restrict search to a specific course

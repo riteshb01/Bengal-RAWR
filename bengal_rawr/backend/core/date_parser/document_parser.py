@@ -1,8 +1,3 @@
-"""
-Bengal RAWR — Document Parser
-Extracts clean text from PDF, TXT, and DOCX files.
-Supports OCR fallback via pytesseract for scanned PDFs.
-"""
 
 import os
 import re
@@ -45,11 +40,6 @@ def clean_extracted_text(text: str) -> str:
 
 
 def extract_pdf_text(file_path: str) -> str:
-    """
-    Extract text from a PDF using pdfplumber.
-    Falls back to pytesseract OCR if a page has no extractable text
-    (handles scanned/image-based PDFs).
-    """
     text_parts = []
 
     try:
@@ -81,6 +71,7 @@ def extract_pdf_text(file_path: str) -> str:
 def _ocr_page(page, page_num: int) -> Optional[str]:
     """OCR a single PDF page using pytesseract."""
     try:
+        # pyrefly: ignore [missing-import]
         import pytesseract
         from PIL import Image
         import io
@@ -150,10 +141,6 @@ def extract_docx_text(file_path: str) -> str:
 
 
 class DocumentParser:
-    """
-    Unified document parser that routes to the correct extractor
-    based on file extension.
-    """
 
     SUPPORTED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.doc'}
 
@@ -161,19 +148,7 @@ class DocumentParser:
         self.supported_extensions = self.SUPPORTED_EXTENSIONS
 
     def parse(self, file_path: str) -> str:
-        """
-        Parse a document and return clean text.
-
-        Args:
-            file_path: Absolute path to the uploaded file
-
-        Returns:
-            Cleaned text string
-
-        Raises:
-            ValueError: If file type is unsupported
-            FileNotFoundError: If file doesn't exist
-        """
+    
         path = Path(file_path)
 
         if not path.exists():
@@ -194,6 +169,9 @@ class DocumentParser:
             return extract_txt_text(file_path)
         elif ext in ('.docx', '.doc'):
             return extract_docx_text(file_path)
+
+        # Should never reach here — extension already validated above
+        raise ValueError(f"Unhandled file extension '{ext}'.")
 
     def get_file_metadata(self, file_path: str) -> dict:
         """Return file metadata: size, extension, name."""

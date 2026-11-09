@@ -1,10 +1,12 @@
 /**
  * Bengal RAWR Dashboard — Constants
+ *
+ * API_BASE is read from the Vite env variable VITE_API_BASE_URL.
+ * Set it in .env.local for development, or in your hosting platform for production.
+ * Fallback: http://localhost:8000/api/v1
  */
 
-// Django backend base URL.
-// In production, swap this via an env var or a proxy config in vite.config.js.
-export const API_BASE = 'http://localhost:8000/api/v1';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 // Workload threshold — weeks above this are flagged as overloaded
 export const WORKLOAD_THRESHOLD = 7;

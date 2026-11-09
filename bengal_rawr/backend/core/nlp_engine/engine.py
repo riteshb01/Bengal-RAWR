@@ -181,14 +181,8 @@ def extract_event_title(line: str, event_type: str) -> str:
     # If too short, fall back to event_type capitalized
     if len(title) < 3:
         return event_type.capitalize()
-
-    # Truncate at a reasonable length
+    # Truncate 
     return title[:120]
-
-
-# ─────────────────────────────────────────────
-# Grade percentage extraction
-# ─────────────────────────────────────────────
 
 # Matches patterns like: 25%, (25%), worth 25%, = 25%, : 25%
 # Captures the numeric value; validates range 1–100.
@@ -297,16 +291,7 @@ class SyllabusNLPEngine:
         return dates
 
     def process(self, text: str, course_name: str = 'Unknown') -> list:
-        """
-        Main entry point: takes raw text, returns list of event dicts.
-
-        Returns:
-            List of dicts with keys:
-                course, event_type, title, date, weight, raw_line, source
-            Optional keys (present when data is available):
-                ml_confidence    — float, only on ML-sourced events
-                grade_percentage — float, only when a % was found on the line
-        """
+    
         if not text or not text.strip():
             logger.warning("Empty text passed to NLP engine")
             return []
@@ -318,11 +303,8 @@ class SyllabusNLPEngine:
             line = line.strip()
             if not line or len(line) < 5:
                 continue
-
-            # Step 1: Detect event type via keyword heuristics
             event_info = detect_event_type(line)
 
-            # Step 1b: ML classifier fallback — only fires when keywords miss
             if event_info is None and self.classifier:
                 ml_label = self.classifier.predict(line)
                 if ml_label:
@@ -359,10 +341,6 @@ class SyllabusNLPEngine:
             ml_confidence = event_info.get('ml_confidence')  # None for keyword hits
             detection_source = event_info.get('source', 'keyword')
 
-            # Step 4a: Check for an explicit grade percentage on this line.
-            # If found, override the default type-based weight with a
-            # percentage-derived weight so a 5% quiz and a 40% final are
-            # treated proportionally, not identically.
             grade_pct = extract_grade_percentage(line)
             final_weight = (
                 grade_percentage_to_weight(grade_pct)
