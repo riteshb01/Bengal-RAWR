@@ -1,4 +1,4 @@
-# 🐯 Bengal RAWR
+# Bengal RAWR
 ### Academic Conflict & Workload Intelligence System
 
 > Automated academic workload analysis pipeline that extracts assessment schedules from course syllabi, detects calendar/workload bottlenecks across concurrent courses, and surfaces timeline insights via an interactive dashboard.
