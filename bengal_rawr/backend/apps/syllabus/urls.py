@@ -5,12 +5,14 @@ from apps.syllabus.views import (
     EventListView, EventDetailView, VerifyEventView,
     ConflictListView, RunConflictAnalysisView,
     DashboardSummaryView, HeatmapDataView, WeeklyWorkloadView,
-    SemanticSearchView,
+    SemanticSearchView, HealthCheckView,
 )
 
 app_name = 'syllabus'
 
 urlpatterns = [
+    # Health
+    path('health/',                         HealthCheckView.as_view(),       name='health'),
     # Courses
     path('courses/',                        CourseListCreateView.as_view(),  name='course-list'),
     path('courses/<int:pk>/',               CourseDetailView.as_view(),      name='course-detail'),

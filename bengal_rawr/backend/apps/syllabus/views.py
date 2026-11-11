@@ -46,6 +46,8 @@ def _run_full_pipeline(syllabus_file: SyllabusFile) -> dict:
     syllabus_file.save(update_fields=['status'])
 
     try:
+        course = syllabus_file.course
+
         # Step 1 — Extract text
         parser = DocumentParser()
         file_path = syllabus_file.file.path
@@ -77,7 +79,6 @@ def _run_full_pipeline(syllabus_file: SyllabusFile) -> dict:
             logger.warning(f"Embedding generation failed (non-fatal): {e}")
 
         # Step 2 — NLP event extraction
-        course = syllabus_file.course
         nlp_engine = SyllabusNLPEngine(reference_year=datetime.now().year)
         raw_events = nlp_engine.process(extracted_text, course_name=course.code or course.name)
 
@@ -220,10 +221,11 @@ class UploadSyllabusView(APIView):
             )
 
         # Get or create course
-        course_name = request.data.get('course_name', file.name.replace(ext, ''))
-        course_code = request.data.get('course_code', '')
-        professor = request.data.get('professor', '')
-        semester = request.data.get('semester', '')
+        fallback_name = os.path.splitext(file.name)[0]
+        course_name = (request.data.get('course_name') or '').strip() or fallback_name
+        course_code = (request.data.get('course_code') or '').strip()
+        professor = (request.data.get('professor') or '').strip()
+        semester = (request.data.get('semester') or '').strip()
 
         course, created = Course.objects.get_or_create(
             name=course_name,
@@ -297,13 +299,24 @@ class EventListView(APIView):
         week_key = request.query_params.get('week_key')
 
         if course_id:
-            queryset = queryset.filter(course_id=course_id)
+            try:
+                queryset = queryset.filter(course_id=int(course_id))
+            except ValueError:
+                return Response({'error': 'course_id must be an integer.'}, status=status.HTTP_400_BAD_REQUEST)
         if event_type:
             queryset = queryset.filter(event_type=event_type)
         if start_date:
-            queryset = queryset.filter(date__gte=start_date)
+            try:
+                date.fromisoformat(start_date)
+                queryset = queryset.filter(date__gte=start_date)
+            except ValueError:
+                return Response({'error': 'start_date must be YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
         if end_date:
-            queryset = queryset.filter(date__lte=end_date)
+            try:
+                date.fromisoformat(end_date)
+                queryset = queryset.filter(date__lte=end_date)
+            except ValueError:
+                return Response({'error': 'end_date must be YYYY-MM-DD.'}, status=status.HTTP_400_BAD_REQUEST)
         if week_key:
             # e.g. 2026-W11
             try:
@@ -547,7 +560,7 @@ class WeeklyWorkloadView(APIView):
 
 class SemanticSearchView(APIView):
     """
-    GET /api/search/?q=<query>&course_id=<optional>
+    GET /api/v1/search/?q=<query>&course_id=<optional>&limit=<optional>
     Performs semantic (vector similarity) search across stored syllabus embeddings.
     """
 
@@ -559,15 +572,31 @@ class SemanticSearchView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        course_id = request.query_params.get('course_id')
-        limit = min(int(request.query_params.get('limit', 5)), 20)
+        raw_course_id = request.query_params.get('course_id')
+        course_id = None
+        if raw_course_id:
+            try:
+                course_id = int(raw_course_id)
+            except ValueError:
+                return Response(
+                    {'error': 'Query parameter "course_id" must be an integer.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        try:
+            limit = max(1, min(int(request.query_params.get('limit', 5)), 20))
+        except ValueError:
+            return Response(
+                {'error': 'Query parameter "limit" must be an integer.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             from core.embeddings.service import get_embedding_service
             service = get_embedding_service()
             results = service.search(
                 query=query,
-                course_id=int(course_id) if course_id else None,
+                course_id=course_id,
                 limit=limit,
             )
             return Response({
@@ -581,3 +610,12 @@ class SemanticSearchView(APIView):
                 {'error': 'Semantic search is not available. Embeddings may not be generated yet.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
+
+
+class HealthCheckView(APIView):
+    """GET /health/ — Service health check for load balancers & monitoring."""
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response({'status': 'ok'})

@@ -22,10 +22,14 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_conflict_count(self, obj):
         from apps.syllabus.models import ConflictWeek
-        course_code = obj.code or obj.name
-        return ConflictWeek.objects.filter(
-            courses_affected__contains=course_code
-        ).count()
+        identifiers = {v for v in (obj.code, obj.name) if v}
+        if not identifiers:
+            return 0
+        return sum(
+            1
+            for courses in ConflictWeek.objects.values_list('courses_affected', flat=True)
+            if isinstance(courses, list) and any(c in identifiers for c in courses)
+        )
 
 
 class SyllabusUploadSerializer(serializers.ModelSerializer):

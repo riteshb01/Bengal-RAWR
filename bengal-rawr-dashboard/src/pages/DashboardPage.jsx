@@ -171,9 +171,9 @@ const DashboardPage = () => {
               <span>✓ Export to Google Calendar</span>
             </div>
           </div>
-          <button style={{ background: '#fff', color: 'var(--ink)', border: 'none', borderRadius: '4px', padding: '0.5rem 1.5rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
+          <span style={{ display: 'inline-block', background: '#fff', color: 'var(--ink)', border: 'none', borderRadius: '4px', padding: '0.5rem 1.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
             Upload Now
-          </button>
+          </span>
         </Link>
       </div>
 

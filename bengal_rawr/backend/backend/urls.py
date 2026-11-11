@@ -4,7 +4,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 
+from apps.syllabus.views import HealthCheckView
+
 urlpatterns = [
+    path('health/', HealthCheckView.as_view(), name='health-root'),
     path('admin/', admin.site.urls),
     path('api/v1/', include('apps.syllabus.urls')),
     path('', RedirectView.as_view(url='/admin/', permanent=False)),

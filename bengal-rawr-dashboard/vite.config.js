@@ -28,6 +28,15 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       // Disable sourcemaps in production to avoid leaking source
       sourcemap: mode !== 'production',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            query: ['@tanstack/react-query', 'zustand'],
+            charts: ['recharts'],
+          },
+        },
+      },
     },
   };
 });
